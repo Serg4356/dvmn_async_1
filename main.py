@@ -93,21 +93,23 @@ def main(canvas):
     for star in range(stars_count):
         row, column = choose_coords(canvas_width, canvas_height)
         coroutines.append(blink(canvas, row, column, symbol=choose_star()))
-    iterations_before_change_brightness = [0]*(stars_count+1)
+    iterations_before_change_brightness = [0]*(stars_count)
     gun_shot = fire(canvas, 18, 30)
-    coroutines.append(gun_shot)
+    #coroutines.append(gun_shot)
     while True:
       try:
         for num, coroutine in enumerate(coroutines):
           if iterations_before_change_brightness[num] <= 0:
-            try:
-              seconds_to_sleep = coroutines[random.randint(0,len(coroutines)-1)].send(None).seconds
-            except AttributeError:
-              seconds_to_sleep = 1
+            #try:
+             # seconds_to_sleep = coroutines[random.randint(0,len(coroutines)-1)].send(None).seconds
+            #except AttributeError:
+              #seconds_to_sleep = 1
+            seconds_to_sleep = coroutines[random.randint(0,len(coroutines)-1)].send(None).seconds
             ticks_to_sleep = convert_seconds_to_iterations(
               seconds_to_sleep
             )
             iterations_before_change_brightness[num] = ticks_to_sleep
+          gun_shot.send(None)
           iterations_before_change_brightness[num] -= 1
       except StopIteration:
             coroutines.remove(coroutine)
@@ -131,10 +133,30 @@ class Sleep(EventLoopCommand):
 def convert_seconds_to_iterations(seconds):
   return seconds * 10000
 
+async def blink_2(canvas, row, column, symbol='*'):
+    while True:
+        canvas.addstr(row, column, symbol, curses.A_DIM)
+        for iter in range(10):
+            await asyncio.sleep(0)
+
+        canvas.addstr(row, column, symbol)
+        await asyncio.sleep(0)
+
+        canvas.addstr(row, column, symbol, curses.A_BOLD)
+        await asyncio.sleep(0)
+
+        canvas.addstr(row, column, symbol)
+        await asyncio.sleep(0)
+
+
+def main_2(canvas):
+    curses.curs_set(False)
+
+
 
 if __name__ == '__main__':
     curses.update_lines_cols()
     curses.wrapper(main)
     #curses.wrapper(draw)
     #while True:
-        #curses.wrapper(draw_star)
+    #curses.wrapper(draw_star)
