@@ -3,6 +3,7 @@ import curses
 import asyncio
 import curses
 import random
+import sys
 
 '''
 def draw(canvas):
@@ -29,7 +30,7 @@ def draw_star(canvas):
     canvas.addstr(row, column, '*')
     time.sleep(0.3)
     canvas.refresh()
-
+'''
 
 async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0):
     """Display animation of gun shot. Direction and speed can be specified."""
@@ -59,7 +60,7 @@ async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0
         canvas.addstr(round(row), round(column), ' ')
         row += rows_speed
         column += columns_speed
-'''
+
 
 def choose_star():
   stars = ['+', ':', '*', '.']
@@ -73,11 +74,11 @@ def choose_coords(maxx, maxy):
 def main(canvas):
     canvas.border()
     curses.curs_set(False)
-    stars_count = 100
+    stars_count = 1000
     coroutines = []
     max_row, max_column = canvas.getmaxyx()
-    coroutine = blink(canvas, 5, 5)
-    for i in range(stars_count):
+    gun_shot = fire(canvas, max_row-2, max_column//2)
+    for _ in range(stars_count):
         coroutines.append(blink(
             canvas,
             random.randint(2, max_row-2),
@@ -85,22 +86,23 @@ def main(canvas):
             symbol=choose_star()
         ))
     x = 0
-    while x<10000:
+    while x<500:
         x += 1
+        for _ in range(stars_count):
+            coroutine = random.choice(coroutines)
+            coroutine.send(None)
         try:
-            coroutine_num = random.randint(0,len(coroutines)-1)
-            coroutines[coroutine_num].send(None)
-        #for coroutine in coroutines:
-            #coroutine.send(None)
+            gun_shot.send(None)
         except StopIteration:
-            coroutines.remove(coroutines[coroutine_num])
+            pass
         canvas.refresh()
-        time.sleep(0.01)
+        time.sleep(0.1)
 
 
 async def blink(canvas, row, column, symbol='*'):
+    while True:
         canvas.addstr(row, column, symbol, curses.A_DIM)
-        for _ in range(10):
+        for _ in range(20):
             await asyncio.sleep(0)
 
         canvas.addstr(row, column, symbol)
@@ -114,7 +116,6 @@ async def blink(canvas, row, column, symbol='*'):
         canvas.addstr(row, column, symbol)
         for _ in range(3):
             await asyncio.sleep(0)
-
 
 
 if __name__ == '__main__':
