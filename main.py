@@ -4,6 +4,8 @@ import asyncio
 import curses
 import random
 import sys
+from curses_tools import read_controls, draw_frame, get_frame_size
+
 
 '''
 def draw(canvas):
@@ -31,6 +33,38 @@ def draw_star(canvas):
     time.sleep(0.3)
     canvas.refresh()
 '''
+
+
+def get_frame(file_path):
+    with open(file_path, 'r') as file:
+        return file.read()
+
+
+async def animate_spaceship(canvas, frame_1, frame_2, row, column):
+    while True:
+        draw_frame(canvas, row, column, frame_1)
+        for _ in range(2):
+            await asyncio.sleep(0)
+
+        draw_frame(canvas, row, column, frame_1, negative=True)
+
+        draw_frame(canvas, row, column, frame_2)
+        for _ in range(2):
+            await asyncio.sleep(0)
+
+        draw_frame(canvas, row, column, frame_2, negative=True)
+
+
+async def control_spaceship(canvas, row, column, frame_1, frame_2):
+    rows_direction, columns_direction, space_pressed = read_controls(canvas)
+    canvas.addstr(5,5, str(rows_direction))
+    spaceship = animate_spaceship(canvas,
+                                  frame_1,
+                                  frame_2,
+                                  row+rows_direction,
+                                  column+ columns_direction)
+    await spaceship
+
 
 async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0):
     """Display animation of gun shot. Direction and speed can be specified."""
@@ -73,8 +107,9 @@ def choose_coords(maxx, maxy):
 
 def main(canvas):
     canvas.border()
+    canvas.nodelay(True)
     curses.curs_set(False)
-    stars_count = 1000
+    stars_count = 100
     coroutines = []
     max_row, max_column = canvas.getmaxyx()
     gun_shot = fire(canvas, max_row-2, max_column//2)
@@ -86,8 +121,17 @@ def main(canvas):
             symbol=choose_star()
         ))
     x = 0
+    frame_1 = get_frame('./animations/rocket_frame_1.txt')
+    frame_2 = get_frame('./animations/rocket_frame_2.txt')
+    spaceship_width, spaceship_height = get_frame_size(frame_1)
+    spaceship = control_spaceship(canvas,
+                                  (max_row//2-spaceship_width//2),
+                                  (max_column//2 - spaceship_height//2),
+                                  frame_1,
+                                  frame_2)
     while x<500:
         x += 1
+        rows_direction, columns_direction, space_pressed = read_controls(canvas)
         for _ in range(stars_count):
             coroutine = random.choice(coroutines)
             coroutine.send(None)
@@ -95,6 +139,16 @@ def main(canvas):
             gun_shot.send(None)
         except StopIteration:
             pass
+        except RuntimeError:
+            canvas.clear()
+            canvas.addstr(max_row//2,
+                          (max_column//2 - 11),
+                          "Rocket's been launched!",
+                          curses.A_BOLD)
+            canvas.refresh()
+            time.sleep(3)
+            sys.exit()
+        spaceship.send(None)
         canvas.refresh()
         time.sleep(0.1)
 
