@@ -43,18 +43,37 @@ def get_frame(file_path):
 async def animate_spaceship(canvas, frame_1, frame_2, row, column):
     while True:
         canvas.nodelay(True)
-
+        maxx, maxy = canvas.getmaxyx()
         rows_direction, columns_direction, space_direction = read_controls(canvas)
-        row += rows_direction
-        column += columns_direction
+        frame_1_rows, frame_1_columns = get_frame_size(frame_1)
+
+        if (row <= maxx - frame_1_rows - 3) & (rows_direction > 0):
+            row += rows_direction
+        elif (row >= 2) & (rows_direction < 0):
+            row += rows_direction
+
+        if (column <= maxy - frame_1_columns - 3) & (columns_direction > 0):
+            column += columns_direction
+        elif (column > 2) & (columns_direction < 0):
+            column += columns_direction
+
         draw_frame(canvas, row, column, frame_1)
         await asyncio.sleep(0)
 
         draw_frame(canvas, row, column, frame_1, negative=True)
 
         rows_direction, columns_direction, space_direction = read_controls(canvas)
-        row += rows_direction
-        column += columns_direction
+        maxx, maxy = canvas.getmaxyx()
+        frame_2_rows, frame_2_columns = get_frame_size(frame_2)
+        if (row <= maxx - frame_2_rows - 3) & (rows_direction > 0):
+            row += rows_direction
+        elif (row >= 2) & (rows_direction < 0):
+            row += rows_direction
+
+        if (column <= maxy - frame_2_columns - 3) & (columns_direction > 0):
+            column += columns_direction
+        elif (column > 2) & (columns_direction < 0):
+            column += columns_direction
         draw_frame(canvas, row, column, frame_2)
         await asyncio.sleep(0)
 
@@ -107,7 +126,6 @@ def main(canvas):
     stars_count = 100
     coroutines = []
     max_row, max_column = canvas.getmaxyx()
-    gun_shot = fire(canvas, max_row-2, max_column//2)
     for _ in range(stars_count):
         coroutines.append(blink(
             canvas,
@@ -124,24 +142,11 @@ def main(canvas):
                                   frame_2,
                                   (max_row//2-spaceship_width//2),
                                   (max_column//2 - spaceship_height//2))
-    while x<500:
+    while x<200:
         x += 1
         for _ in range(stars_count):
             coroutine = random.choice(coroutines)
             coroutine.send(None)
-        try:
-            gun_shot.send(None)
-        except StopIteration:
-            pass
-        except RuntimeError:
-            canvas.clear()
-            canvas.addstr(max_row//2,
-                          (max_column//2 - 11),
-                          "Rocket's been launched!",
-                          curses.A_BOLD)
-            canvas.refresh()
-            time.sleep(3)
-            sys.exit()
         spaceship.send(None)
         canvas.refresh()
         time.sleep(0.1)
