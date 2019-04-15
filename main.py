@@ -42,28 +42,23 @@ def get_frame(file_path):
 
 async def animate_spaceship(canvas, frame_1, frame_2, row, column):
     while True:
+        canvas.nodelay(True)
+
+        rows_direction, columns_direction, space_direction = read_controls(canvas)
+        row += rows_direction
+        column += columns_direction
         draw_frame(canvas, row, column, frame_1)
-        for _ in range(2):
-            await asyncio.sleep(0)
+        await asyncio.sleep(0)
 
         draw_frame(canvas, row, column, frame_1, negative=True)
 
+        rows_direction, columns_direction, space_direction = read_controls(canvas)
+        row += rows_direction
+        column += columns_direction
         draw_frame(canvas, row, column, frame_2)
-        for _ in range(2):
-            await asyncio.sleep(0)
+        await asyncio.sleep(0)
 
         draw_frame(canvas, row, column, frame_2, negative=True)
-
-
-async def control_spaceship(canvas, row, column, frame_1, frame_2):
-    rows_direction, columns_direction, space_pressed = read_controls(canvas)
-    canvas.addstr(5,5, str(rows_direction))
-    spaceship = animate_spaceship(canvas,
-                                  frame_1,
-                                  frame_2,
-                                  row+rows_direction,
-                                  column+ columns_direction)
-    await spaceship
 
 
 async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0):
@@ -124,14 +119,13 @@ def main(canvas):
     frame_1 = get_frame('./animations/rocket_frame_1.txt')
     frame_2 = get_frame('./animations/rocket_frame_2.txt')
     spaceship_width, spaceship_height = get_frame_size(frame_1)
-    spaceship = control_spaceship(canvas,
-                                  (max_row//2-spaceship_width//2),
-                                  (max_column//2 - spaceship_height//2),
+    spaceship = animate_spaceship(canvas,
                                   frame_1,
-                                  frame_2)
+                                  frame_2,
+                                  (max_row//2-spaceship_width//2),
+                                  (max_column//2 - spaceship_height//2))
     while x<500:
         x += 1
-        rows_direction, columns_direction, space_pressed = read_controls(canvas)
         for _ in range(stars_count):
             coroutine = random.choice(coroutines)
             coroutine.send(None)
