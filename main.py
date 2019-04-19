@@ -100,20 +100,22 @@ def main(canvas):
                                   frame_2,
                                   rows_center,
                                   columns_center)
+    coroutines.append(spaceship)
     loop = 0
     loops_count = 100
     while loop < loops_count:
         loop += 1
-        for _ in range(stars_count):
-            coroutine = random.choice(coroutines)
+        for coroutine in coroutines:
             coroutine.send(None)
-        spaceship.send(None)
         canvas.refresh()
         time.sleep(0.1)
 
 
 async def blink(canvas, row, column, symbol='*'):
     while True:
+        for _ in range(random.randint(1,20)):
+            await asyncio.sleep(0)
+
         canvas.addstr(row, column, symbol, curses.A_DIM)
         for _ in range(20):
             await asyncio.sleep(0)
